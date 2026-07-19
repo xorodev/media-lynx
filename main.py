@@ -67,13 +67,15 @@ def get_formats(request: FormatRequest):
             "yt-dlp",
             "--dump-json",
             "--no-playlist",
-            "--extractor-args", "youtube:player-client=android,web",
             url
         ]
-
+        
         if os.path.exists("cookies.txt"):
             cmd.insert(1, "cookies.txt")
             cmd.insert(1, "--cookies")
+        else:
+            cmd.insert(1, "youtube:player-client=android,web")
+            cmd.insert(1, "--extractor-args")
 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         
@@ -171,7 +173,6 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
             cmd = [
                 "yt-dlp",
                 "--no-playlist",
-                "--extractor-args", "youtube:player-client=android,web",
                 "-x", "--audio-format", "mp3",
                 "--audio-quality", audio_q,
                 "-o", os.path.join(tmp_dir, "%(title)s.%(ext)s"),
@@ -190,16 +191,18 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
             cmd = [
                 "yt-dlp",
                 "--no-playlist",
-                "--extractor-args", "youtube:player-client=android,web",
                 "-f", fmt_selector,
                 "--merge-output-format", "mp4",
                 "-o", os.path.join(tmp_dir, "%(title)s.%(ext)s"),
                 url
             ]
-
+            
         if os.path.exists("cookies.txt"):
             cmd.insert(1, "cookies.txt")
             cmd.insert(1, "--cookies")
+        else:
+            cmd.insert(1, "youtube:player-client=android,web")
+            cmd.insert(1, "--extractor-args")
 
         media_type = "audio/mpeg" if target_format == "mp3" else "video/mp4"
         ext = target_format
