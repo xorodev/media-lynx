@@ -12,6 +12,10 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, Union
 
+node_bin_path = os.path.join(os.getcwd(), "node-js", "bin")
+if os.path.exists(node_bin_path):
+    os.environ["PATH"] = f"{node_bin_path}:{os.environ['PATH']}"
+
 app = FastAPI()
 
 app.add_middleware(
@@ -43,7 +47,6 @@ def sanitize_url(url: str) -> str:
     return url
 
 def sanitize_filename(filename: str) -> str:
-    """Elimina emojis, caracteres no ASCII y reemplaza espacios por guiones bajos."""
     filename = unicodedata.normalize('NFKD', filename)
     filename = filename.encode('ascii', 'ignore').decode('ascii')
     filename = re.sub(r'\s+', '_', filename)
@@ -52,7 +55,6 @@ def sanitize_filename(filename: str) -> str:
     return filename
 
 def cleanup_temp_dir(dir_path: str):
-    """Elimina de forma segura el directorio temporal y su contenido tras la descarga."""
     try:
         if os.path.exists(dir_path):
             shutil.rmtree(dir_path)
@@ -101,56 +103,56 @@ def get_formats(request: FormatRequest):
                 if bitrate and bitrate > 0:
                     audio_set.add(int(bitrate))
 
-        standard_audio = {320, 192, 128}
-        audio_qualities = sorted(list(audio_set.union(standard_audio)), reverse=True)
-        combined = [f for f in raw_formats if f.get("vcodec", "none") not in (None, "none")]
+            standard_audio = {320, 192, 128}
+            audio_qualities = sorted(list(audio_set.union(standard_audio)), reverse=True)
+            combined = [f for f in raw_formats if f.get("vcodec", "none") not in (None, "none")]
 
-        seen = set()
-        formats_out = []
-        for f in reversed(combined):
-            height = f.get("height")
-            fps = f.get("fps")
-            ext = f.get("ext", "?")
-            acodec = f.get("acodec", "none")
-            tbr = f.get("tbr") or f.get("vbr") or 0
-            key = (height, fps, ext)
+            seen = set()
+            formats_out = []
+            for f in reversed(combined):
+                height = f.get("height")
+                fps = f.get("fps")
+                ext = f.get("ext", "?")
+                acodec = f.get("acodec", "none")
+                tbr = f.get("tbr") or f.get("vbr") or 0
+                key = (height, fps, ext)
 
-            if key in seen:
-                continue
-            seen.add(key)
+                if key in seen:
+                    continue
+                seen.add(key)
 
-            if height:
-                label_parts = [f"{height}p"]
-                if fps and fps > 30:
-                    label_parts.append(f"{int(fps)}fps")
-                label_parts.append(ext.upper())
-                if acodec and acodec != "none":
-                    label_parts.append("+ audio")
-                label = " · ".join(label_parts)
-            else:
-                label = f"{ext.upper()} ({int(tbr)}kbps)" if tbr else ext.upper()
+                if height:
+                    label_parts = [f"{height}p"]
+                    if fps and fps > 30:
+                        label_parts.append(f"{int(fps)}fps")
+                    label_parts.append(ext.upper())
+                    if acodec and acodec != "none":
+                        label_parts.append("+ audio")
+                    label = " · ".join(label_parts)
+                else:
+                    label = f"{ext.upper()} ({int(tbr)}kbps)" if tbr else ext.upper()
 
-            formats_out.append({
-                "format_id": f["format_id"],
-                "label": label,
-                "height": height or 0,
-                "fps": fps or 0,
-                "ext": ext,
-                "tbr": tbr,
-                "has_audio": acodec not in (None, "none"),
-            })
+                formats_out.append({
+                    "format_id": f["format_id"],
+                    "label": label,
+                    "height": height or 0,
+                    "fps": fps or 0,
+                    "ext": ext,
+                    "tbr": tbr,
+                    "has_audio": acodec not in (None, "none"),
+                })
 
-        formats_out.sort(key=lambda x: (x["height"], x["fps"], x["tbr"]))
+            formats_out.sort(key=lambda x: (x["height"], x["fps"], x["tbr"]))
 
-        return {
-            "formats": formats_out,
-            "video_qualities": video_qualities,
-            "audio_qualities": audio_qualities,
-            "title": data.get("title", "Sin título"),
-            "thumbnail": data.get("thumbnail", ""),
-            "duration": data.get("duration_string", ""),
-            "channel": data.get("channel", "")
-        }
+            return {
+                "formats": formats_out,
+                "video_qualities": video_qualities,
+                "audio_qualities": audio_qualities,
+                "title": data.get("title", "Sin título"),
+                "thumbnail": data.get("thumbnail", ""),
+                "duration": data.get("duration_string", ""),
+                "channel": data.get("channel", "")
+            }
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="*ERROR. Tiempo de espera agotado.")
 
