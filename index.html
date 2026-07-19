@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Media Lynx</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/styles/style.css">
+</head>
+<body>
+<div class="aurora" aria-hidden="true">
+<span class="aurora__blob aurora__blob--teal"></span>
+<span class="aurora__blob aurora__blob--violet"></span>
+<span class="aurora__blob aurora__blob--magenta"></span>
+</div>
+
+<div class="app">
+<header class="topbar">
+<div class="topbar__mark">
+<span class="topbar__dot"></span>
+<span>Media&nbsp;Lynx</span>
+</div>
+<p class="topbar__tag">v1.0.0-release</p>
+</header>
+
+<main class="stage">
+<section class="hero">
+<h1 class="hero__title">¡Pega el enlace, elige el formato y descarga sin complicaciones!</h1>
+<p class="hero__subtitle">Descargue cualquier vídeo público de YouTube a MP4 o MP3 directamente desde su navegador.</p>
+
+<form id="url-form" class="url-card" novalidate>
+<label for="url-input" class="url-card__label">Enlace de YouTube</label>
+<div class="url-card__row">
+<input
+id="url-input"
+name="url"
+type="url"
+inputmode="url"
+autocomplete="off"
+spellcheck="false"
+placeholder="https://www.youtube.com/watch?v=..."
+required
+>
+<button type="submit" id="analyze-btn" class="btn btn--primary">
+<span class="btn__label">Analizar</span>
+<span class="btn__spinner" aria-hidden="true"></span>
+</button>
+</div>
+<p id="url-error" class="url-card__error" role="alert" aria-live="assertive"></p>
+</form>
+
+<p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; text-align: center; line-height: 1.4;">
+  * Nota: Para garantizar que el servicio siga siendo 100% gratuito, los videos que superen los 15~20 minutos, o sino en la resolución 1080p podrían no procesarse debido a las capacidades limitadas del servidor.
+</p>
+
+</section>
+
+<article id="placeholder-card" class="card card--placeholder">
+  <p class="placeholder__title">No hay resultados todavía</p>
+  <p style="color: var(--teal); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem; max-width: 28rem;">
+    💡 Sugerencia: Para disfrutar de una descarga rápida y exitosa, le sugerimos usar videos de corta duración, como contenido musical o tutoriales.
+  </p>
+</article>
+
+<section id="results" class="results" hidden>
+<article id="preview-card" class="card card--preview">
+<div class="preview__thumb-wrap">
+<img id="preview-thumb" class="preview__thumb" alt="" width="480" height="270" loading="lazy">
+</div>
+<div class="preview__info">
+<p class="preview__eyebrow" id="preview-channel"></p>
+<h2 class="preview__title" id="preview-title"></h2>
+<p class="preview__meta" id="preview-duration"></p>
+</div>
+</article>
+
+<article class="card card--options" id="video-card">
+<div class="card__head">
+<h3>Vídeo</h3>
+<span class="pill">MP4</span>
+</div>
+<div class="chip-group" id="video-chips" role="radiogroup" aria-label="Calidad de video"></div>
+<button type="button" class="btn btn--accent" id="video-download-btn" disabled>
+<span class="btn__label">Seleccione una calidad</span>
+<span class="btn__spinner" aria-hidden="true"></span>
+</button>
+<div class="progress" id="video-progress" hidden>
+<div class="progress__bar" id="video-progress-bar"></div>
+</div>
+<p class="status" id="video-status" role="status" aria-live="polite"></p>
+</article>
+
+<article class="card card--options" id="audio-card">
+<div class="card__head">
+<h3>Audio</h3>
+<span class="pill">MP3</span>
+</div>
+<div class="chip-group" id="audio-chips" role="radiogroup" aria-label="Calidad de audio"></div>
+<button type="button" class="btn btn--accent" id="audio-download-btn" disabled>
+<span class="btn__label">Seleccione una calidad</span>
+<span class="btn__spinner" aria-hidden="true"></span>
+</button>
+<div class="progress" id="audio-progress" hidden>
+<div class="progress__bar" id="audio-progress-bar"></div>
+</div>
+<p class="status" id="audio-status" role="status" aria-live="polite"></p>
+</article>
+</section>
+</main>
+</div>
+
+<script src="src/js/script.js"></script>
+</body>
+</html>

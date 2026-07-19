@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Entorno y Secretos
+.env
+.env.*
+
+# Temporales del sistema y editores
+.DS_Store
+.vscode/
+.idea/
+*.log
