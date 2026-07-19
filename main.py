@@ -63,11 +63,19 @@ def cleanup_temp_dir(dir_path: str):
 def get_formats(request: FormatRequest):
     url = sanitize_url(request.url)
     try:
+        # Inyectamos extractor-args para simular cliente móvil y evadir bloqueos
         result = subprocess.run(
-            ["yt-dlp", "--dump-json", "--no-playlist", url],
+            [
+                "yt-dlp",
+                "--dump-json",
+                "--no-playlist",
+                "--extractor-args", "youtube:player-client=android,web",
+                url
+            ],
             capture_output=True, text=True, timeout=30
         )
         if result.returncode != 0:
+            print(f"--- ERROR DE YT-DLP EN FORMATOS: {result.stderr} ---")
             raise HTTPException(status_code=422, detail="*ERROR. No se pudo obtener los formatos del vídeo.")
         data = json.loads(result.stdout)
         raw_formats = data.get("formats", [])
@@ -101,11 +109,11 @@ def get_formats(request: FormatRequest):
             acodec = f.get("acodec", "none")
             tbr = f.get("tbr") or f.get("vbr") or 0
             key = (height, fps, ext)
-            
+
             if key in seen:
                 continue
             seen.add(key)
-            
+
             if height:
                 label_parts = [f"{height}p"]
                 if fps and fps > 30:
@@ -116,7 +124,7 @@ def get_formats(request: FormatRequest):
                 label = " · ".join(label_parts)
             else:
                 label = f"{ext.upper()} ({int(tbr)}kbps)" if tbr else ext.upper()
-                
+
             formats_out.append({
                 "format_id": f["format_id"],
                 "label": label,
@@ -160,6 +168,7 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
             cmd = [
                 "yt-dlp",
                 "--no-playlist",
+                "--extractor-args", "youtube:player-client=android,web",
                 "-x", "--audio-format", "mp3",
                 "--audio-quality", audio_q,
                 "-o", os.path.join(tmp_dir, "%(title)s.%(ext)s"),
@@ -180,6 +189,7 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
             cmd = [
                 "yt-dlp",
                 "--no-playlist",
+                "--extractor-args", "youtube:player-client=android,web",
                 "-f", fmt_selector,
                 "--merge-output-format", "mp4",
                 "-o", os.path.join(tmp_dir, "%(title)s.%(ext)s"),
@@ -191,6 +201,7 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
         if result.returncode != 0:
+            print(f"--- ERROR DE YT-DLP EN DESCARGA: {result.stderr} ---")
             cleanup_temp_dir(tmp_dir)
             raise HTTPException(status_code=422, detail="*ERROR al procesar el archivo.")
 
@@ -202,7 +213,7 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
         file_path = os.path.join(tmp_dir, files[0])
         safe_filename = sanitize_filename(files[0])
         background_tasks.add_task(cleanup_temp_dir, tmp_dir)
-        
+
         return FileResponse(
             path=file_path,
             media_type=media_type,
@@ -217,6 +228,7 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
         cleanup_temp_dir(tmp_dir)
         raise HTTPException(status_code=500, detail=f"*ERROR interno: {str(e)}")
 
+# Forzamos la creación de las carpetas si no existen antes de montarlas
 for folder in ["src", "assets"]:
     if not os.path.exists(folder):
         os.makedirs(folder)
