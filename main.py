@@ -63,17 +63,20 @@ def cleanup_temp_dir(dir_path: str):
 def get_formats(request: FormatRequest):
     url = sanitize_url(request.url)
     try:
-        # Inyectamos extractor-args para simular cliente móvil y evadir bloqueos
-        result = subprocess.run(
-            [
-                "yt-dlp",
-                "--dump-json",
-                "--no-playlist",
-                "--extractor-args", "youtube:player-client=android,web",
-                url
-            ],
-            capture_output=True, text=True, timeout=30
-        )
+        cmd = [
+            "yt-dlp",
+            "--dump-json",
+            "--no-playlist",
+            "--extractor-args", "youtube:player-client=android,web",
+            url
+        ]
+
+        if os.path.exists("cookies.txt"):
+            cmd.insert(1, "cookies.txt")
+            cmd.insert(1, "--cookies")
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        
         if result.returncode != 0:
             print(f"--- ERROR DE YT-DLP EN FORMATOS: {result.stderr} ---")
             raise HTTPException(status_code=422, detail="*ERROR. No se pudo obtener los formatos del vídeo.")
@@ -174,8 +177,6 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
                 "-o", os.path.join(tmp_dir, "%(title)s.%(ext)s"),
                 url
             ]
-            media_type = "audio/mpeg"
-            ext = "mp3"
         else:
             if request.quality:
                 fmt_selector = f"bestvideo[height={request.quality}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height={request.quality}]+bestaudio/best[height={request.quality}]/best"
@@ -195,8 +196,13 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
                 "-o", os.path.join(tmp_dir, "%(title)s.%(ext)s"),
                 url
             ]
-            media_type = "video/mp4"
-            ext = "mp4"
+
+        if os.path.exists("cookies.txt"):
+            cmd.insert(1, "cookies.txt")
+            cmd.insert(1, "--cookies")
+
+        media_type = "audio/mpeg" if target_format == "mp3" else "video/mp4"
+        ext = target_format
 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
@@ -228,7 +234,6 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
         cleanup_temp_dir(tmp_dir)
         raise HTTPException(status_code=500, detail=f"*ERROR interno: {str(e)}")
 
-# Forzamos la creación de las carpetas si no existen antes de montarlas
 for folder in ["src", "assets"]:
     if not os.path.exists(folder):
         os.makedirs(folder)
