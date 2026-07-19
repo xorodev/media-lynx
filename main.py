@@ -217,8 +217,11 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
         cleanup_temp_dir(tmp_dir)
         raise HTTPException(status_code=500, detail=f"*ERROR interno: {str(e)}")
 
-app.mount("/src", StaticFiles(directory="src"), name="src")
+for folder in ["src", "assets"]:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
+app.mount("/src", StaticFiles(directory="src"), name="src")
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 @app.get("/")
